@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>
+      Inject to React example
+    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      jsonpArray = [];
+      var oldPushFunction = jsonpArray.push.bind(jsonpArray);
+      jsonpArray.push = function(...args) {
+        const mArray = args[0];
+        const [name, modules] = mArray;
+
+        // React
+        const originalReactModuleFunc = modules['./node_modules/react/index.js'];
+        if (originalReactModuleFunc) {
+          const overriddenReactModuleFunc = function(module, exports, __webpack_require__) {
+            const result = originalReactModuleFunc(module, exports, __webpack_require__);
+  
+            // Component
+            // const originalComponentFunc = module.exports.Component.bind(module.exports.Component);
+            // originalComponentFunc.isReactComponent = true;
+            // const myComponentFunc = function(props, context, updater) {
+            //   return originalComponentFunc(props, context, updater);
+            // }
+            // module.exports.Component = myComponentFunc;
+  
+            // createElement
+            const originalCreateElementFunc = module.exports.createElement.bind(module.exports.createElement);
+            const myCreateElementFunc = function(...args) {
+              const [type, props, children] = args;
+              if (type.displayName) {
+                // console.log(type.displayName);
+              }
+
+              if (type.displayName === 'COMPONENT_NAME') {
+                // args[2] = 'GIL';
+                // props.name = 'YEY';
+                return originalCreateElementFunc(...args);
+              } else {
+                return originalCreateElementFunc(...args);
+              }
+            }
+            module.exports.createElement = myCreateElementFunc;
+  
+  
+            return result;
+          }
+          modules['./node_modules/react/index.js'] = overriddenReactModuleFunc;
+        }
+
+        oldPushFunction(...args);
+      }
+      window.webpackJsonp = jsonpArray;
+    </script>
+  </head>
+  <body>
+     <div id="app">Page Loading...</div>
+  </body>
+</html>
